@@ -5,15 +5,17 @@
     ;; Import memory for string data and quick lookups
     (import "import" "memory" (memory 1))
 
-    
-    (data (i32.const 0) 
-        ;; The first 64 bytes are for encoding
+
+    ;; Encode lookup array
+    (data $encodeLookupArray
         "\41\42\43\44\45\46\47\48\49\4A\4B\4C\4D\4E\4F\50"
         "\51\52\53\54\55\56\57\58\59\5A\61\62\63\64\65\66"
         "\67\68\69\6A\6B\6C\6D\6E\6F\70\71\72\73\74\75\76"
         "\77\78\79\7A\30\31\32\33\34\35\36\37\38\39\2B\2F"
+    )
 
-        ;; The next 256 bytes are for decoding
+    ;; Decode lookup array
+    (data $decodeLookupArray
         "\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00" ;; 00 - 0F
         "\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00" ;; 10 - 1F
         "\00\00\00\00\00\00\00\00\00\00\00\3E\00\00\00\3F" ;; 20 - 2F
@@ -34,7 +36,6 @@
         "\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00"
     )
 
-
     (;
 
     ;)
@@ -48,7 +49,7 @@
         ;; The current array memory offset
         (local $arrayMemory i32)
 
-        ;; The array memory limit (to the last 3 byte block)
+        ;; The last array memory offset (to the last 3 byte block)
         (local $lastArrayMemory i32)
 
         ;; The current base memory offset
@@ -60,6 +61,11 @@
         ;; Padding count
         (local $paddingCount i32)
 
+        ;; Put the decode lookup table array into memory (at zero offset)
+        i32.const 0
+        i32.const 0
+        i32.const 64
+        memory.init $encodeLookupArray
 
         ;; Workout the last memory offset to the last 3 byte block
         local.get $arrayLength
@@ -89,7 +95,7 @@
             br_if $encode_block
 
             ;; Get get 4 bytes
-            local.get $arrayOffset
+            local.get $arrayMemory
             i32.load
             local.set $arrayData
 
@@ -287,22 +293,152 @@
         i32.store
     )
 
-
     (;
 
     ;)
     (func (export "decode")
-    (;
         ;; Parameters
-        (param $base64Offset i32)
-        (param $base64Length i32)
+        (param $baseOffset i32)
+        (param $baseLength i32)
         (param $arrayOffset i32)
         (param $arrayLength i32)
-        ;; Locals
-        (local $base64 i32)
-        (local $array i32)
 
-;)
+        ;; The current base memory offset
+        (local $baseMemory i32)
+
+        ;; The last base memory offset (to the last 4 byte block)
+        (local $lastBaseMemory i32)
+
+        ;; The current array memory offset
+        (local $arrayMemory i32)
+
+        ;; The base data memory value
+        (local $baseData i32)
+
+        ;; Put the decode lookup table array into memory (at zero offset)
+        i32.const 0
+        i32.const 0
+        i32.const 256
+        memory.init $decodeLookupArray
+
+        ;; Workout the last memory offset to the last 4 byte block
+        local.get $baseLength
+        i32.const 4
+        i32.div_u
+        i32.const 4
+        i32.mul
+        local.get $baseOffset
+        i32.add
+        local.set $lastBaseMemory
+
+        ;; Set base memory location
+        local.get $baseOffset
+        local.set $baseMemory
+
+        ;; Set array memory location
+        local.get $arrayOffset
+        local.set $arrayMemory
+
+        ;; Loop for every 4 bytes
+        loop $encode_loop
+        block $encode_block
+            ;; Check last block limit
+            local.get $baseMemory
+            local.get $lastBaseMemory
+            i32.ge_u
+            br_if $encode_block
+
+            ;; Get get 4 bytes
+            local.get $baseMemory
+            i32.load
+            local.set $baseData
+
+            ;; Push the array memory offset onto the stack (it will be used later)
+            local.get $arrayMemory
+
+            ;; Get first 8 bits
+            local.get $baseData
+            i32.const 0x000000FF
+            i32.and
+
+            ;; Use this 8 bit value as the index to the decode table in memory
+            i32.load8_u
+
+            ;; Keep this first 6 bits (1) on the stack
+
+            ;; Get second 8 bits
+            local.get $baseData
+            i32.const 0x0000FF00
+            i32.and
+            i32.const 8
+            i32.shr_u
+
+            ;; Use this 8 bit value as the index to the decode table in memory
+            i32.load8_u
+
+            ;; Set second 6 bits of the 3 bytes
+            i32.const 6
+            i32.shl
+
+            ;; Keep this 6 bits (2) on the stack
+
+            ;; Get third 8 bits
+            local.get $baseData
+            i32.const 0x00FF0000
+            i32.and
+            i32.const 16
+            i32.shr_u
+
+            ;; Use this 8 bit value as the index to the decode table in memory
+            i32.load8_u
+
+            ;; Set third 6 bits of the 3 bytes
+            i32.const 12
+            i32.shl
+
+            ;; Keep this 6 bits (3) on the stack
+
+            ;; Get forth 8 bits
+            local.get $baseData
+            i32.const 0xFF000000
+            i32.and
+            i32.const 24
+            i32.shr_u
+
+            ;; Use this 8 bit value as the index to the decode table in memory
+            i32.load8_u
+
+            ;; Set third 6 bits of the 3 bytes
+            i32.const 18
+            i32.shl
+
+            ;; Keep this 6 bits (4) on the stack
+
+            ;; We now have the 4 6 bit parts on the stack. Put them together
+            ;; into the into a single 32 bit integer (only the first 24 bits)
+            i32.or
+            i32.or
+            i32.or
+
+            ;; Store the 4 characters onto the base memory (in $arrayMemory)
+            i32.store
+
+            ;; Increase the array memory by 3 bytes
+            local.get $arrayMemory
+            i32.const 3
+            i32.add
+            local.set $arrayMemory
+
+            ;; Increase the base memory offset by 4 bytes
+            local.get $baseMemory
+            i32.const 4
+            i32.add
+            local.set $baseMemory
+
+            ;; Loop again
+            br $encode_loop
+        end
+        end
 
 
 

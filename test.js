@@ -7,8 +7,9 @@ export default class Test {
      * @param {Base64Web|Base64Node} base64 An instance of the base64.wasm file that has been loaded.
      */
     static run(base64) {
-        // Test encode function
-        Test.testEncode(base64);
+        // Run test functions
+        //Test.testEncode(base64);
+        Test.testDecode(base64);
 
         // Log all done
         console.log('Done');
@@ -109,18 +110,57 @@ export default class Test {
         if (result !== 'yeTpyeTpyC==') { console.log('ERROR: testEncode 9 ' + result); return; }
 
         // Test 10 (get all base64 character)
-        arrayBuffer = new Uint8Array(7);
-        // 000011 000010 000001 000000
-        // 
-        arrayBuffer[0] = 0xB2;
-        arrayBuffer[1] = 0x37;
-        arrayBuffer[2] = 0xA5;
-        arrayBuffer[3] = 0xB2;
-        arrayBuffer[4] = 0x37;
-        arrayBuffer[5] = 0xA5;
-        arrayBuffer[6] = 0xB2;
+        arrayBuffer = new Uint8Array(48);
+        arrayBuffer[0] = 0x40;
+        arrayBuffer[1] = 0x20;
+        arrayBuffer[2] = 0x0C;
+        arrayBuffer[3] = 0x44;
+        arrayBuffer[4] = 0x61;
+        arrayBuffer[5] = 0x1C;
+        arrayBuffer[6] = 0x48;
+        arrayBuffer[7] = 0xA2;
+        arrayBuffer[8] = 0x2C;
+        arrayBuffer[9] = 0x4C;
+        arrayBuffer[10] = 0xE3;
+        arrayBuffer[11] = 0x3C;
+        arrayBuffer[12] = 0x50;
+        arrayBuffer[13] = 0x24;
+        arrayBuffer[14] = 0x4D;
+        arrayBuffer[15] = 0x54;
+        arrayBuffer[16] = 0x65;
+        arrayBuffer[17] = 0x5D;
+        arrayBuffer[18] = 0x58;
+        arrayBuffer[19] = 0xA6;
+        arrayBuffer[20] = 0x6D;
+        arrayBuffer[21] = 0x5C;
+        arrayBuffer[22] = 0xE7;
+        arrayBuffer[23] = 0x7D;
+        arrayBuffer[24] = 0x60;
+        arrayBuffer[25] = 0x28;
+        arrayBuffer[26] = 0x8E;
+        arrayBuffer[27] = 0x64;
+        arrayBuffer[28] = 0x69;
+        arrayBuffer[29] = 0x9E;
+        arrayBuffer[30] = 0x68;
+        arrayBuffer[31] = 0xAA;
+        arrayBuffer[32] = 0xAE;
+        arrayBuffer[33] = 0x6C;
+        arrayBuffer[34] = 0xEB;
+        arrayBuffer[35] = 0xBE;
+        arrayBuffer[36] = 0x70;
+        arrayBuffer[37] = 0x2C;
+        arrayBuffer[38] = 0xCF;
+        arrayBuffer[39] = 0x74;
+        arrayBuffer[40] = 0x6D;
+        arrayBuffer[41] = 0xDF;
+        arrayBuffer[42] = 0x78;
+        arrayBuffer[43] = 0xAE;
+        arrayBuffer[44] = 0xEF;
+        arrayBuffer[45] = 0x7C;
+        arrayBuffer[46] = 0xEF;
+        arrayBuffer[47] = 0xFF;
         result = base64.encode(arrayBuffer);
-        if (result !== 'yeTpyeTpyC==') { console.log('ERROR: testEncode 9 ' + result); return; }
+        if (result !== 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/') { console.log('ERROR: testEncode 10 ' + result); return; }
 
 /*
 
@@ -129,5 +169,22 @@ export default class Test {
 
         const base64Result = base64.encode(arrayBuffer);
 */
+    }
+
+    /**
+     * Test the decode function.
+     */
+    static testDecode(base64) {
+        // Set error
+        let error = false;
+
+        // Test 1 (3 bytes from readme example)
+        let arrayBuffer = base64.decode('yeTp');
+        if (arrayBuffer.length !== 3) error = true;
+        if (arrayBuffer[0] !== 0xB2) error = true;
+        if (arrayBuffer[1] !== 0x37) error = true;
+        if (arrayBuffer[2] !== 0xA5) error = true;
+        if (error === true) { console.log('ERROR: testDecode 1'); return; }
+
     }
 }
