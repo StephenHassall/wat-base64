@@ -36,6 +36,28 @@
         "\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00"
     )
 
+    ;; validate lookup array
+    (data $validateLookupArray
+        "\01\01\01\01\01\01\01\01\01\01\01\01\01\01\01\01" ;; 00 - 0F
+        "\01\01\01\01\01\01\01\01\01\01\01\01\01\01\01\01" ;; 10 - 1F
+        "\01\01\01\01\01\01\01\01\01\01\01\00\01\01\01\00" ;; 20 - 2F
+        "\00\00\00\00\00\00\00\00\00\00\01\01\01\01\01\01" ;; 30 - 3F
+
+        "\01\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00" ;; 40 - 4F
+        "\00\00\00\00\00\00\00\00\00\00\00\01\01\01\01\01" ;; 50 - 5F
+        "\01\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00" ;; 60 - 6F
+        "\00\00\00\00\00\00\00\00\00\00\00\01\01\01\01\01" ;; 70 - 7F
+
+        "\01\01\01\01\01\01\01\01\01\01\01\01\01\01\01\01" ;; 80 - FF
+        "\01\01\01\01\01\01\01\01\01\01\01\01\01\01\01\01"
+        "\01\01\01\01\01\01\01\01\01\01\01\01\01\01\01\01"
+        "\01\01\01\01\01\01\01\01\01\01\01\01\01\01\01\01"
+        "\01\01\01\01\01\01\01\01\01\01\01\01\01\01\01\01"
+        "\01\01\01\01\01\01\01\01\01\01\01\01\01\01\01\01"
+        "\01\01\01\01\01\01\01\01\01\01\01\01\01\01\01\01"
+        "\01\01\01\01\01\01\01\01\01\01\01\01\01\01\01\01"
+    )
+
     (;
 
     ;)
@@ -444,4 +466,265 @@
 
     )
 
+    (;
+
+    ;)
+    (func (export "validate")
+        ;; Parameters
+        (param $baseOffset i32)
+        (param $baseLength i32)
+
+        ;; Result
+        (result i32)
+
+        ;; The current base memory offset
+        (local $baseMemory i32)
+
+        ;; The last base memory offset (to the last 4 byte block)
+        (local $lastBaseMemory i32)
+
+        ;; The base data memory value
+        (local $baseData i32)
+
+        ;; The character value
+        (local $character i32)
+
+        ;; Put the validate lookup table array into memory (at zero offset)
+        i32.const 0
+        i32.const 0
+        i32.const 256
+        memory.init $validateLookupArray
+
+        ;; Check length is not zero
+        local.get $baseLength
+        i32.eqz
+        if
+            ;; Return not valid
+            i32.const 0
+            return
+        end
+
+        ;; Check length is divisible by 4
+        local.get $baseLength
+        i32.const 4
+        i32.rem_u
+        if
+            ;; Return not valid
+            i32.const 0
+            return
+        end
+
+        ;; Workout the last memory offset to the last (but one) 4 byte block
+        local.get $baseLength
+        i32.const 4
+        i32.div_u
+        i32.const 1
+        i32.sub
+        i32.const 4
+        i32.mul
+        local.get $baseOffset
+        i32.add
+        local.set $lastBaseMemory
+
+        ;; Set base memory location
+        local.get $baseOffset
+        local.set $baseMemory
+
+        ;; Loop for every 4 bytes
+        loop $encode_loop
+        block $encode_block
+            ;; Check last block limit
+            local.get $baseMemory
+            local.get $lastBaseMemory
+            i32.ge_u
+            br_if $encode_block
+
+            ;; Get get 4 bytes
+            local.get $baseMemory
+            i32.load
+            local.set $baseData
+
+            ;; Get first 8 bits
+            local.get $baseData
+            i32.const 0x000000FF
+            i32.and
+
+            ;; Use this 8 bit value as the index to the validate lookup table in memory
+            i32.load8_u
+
+            ;; If invalid then return not valid
+            if
+                i32.const 0
+                return
+            end
+
+            ;; Get second 8 bits
+            local.get $baseData
+            i32.const 0x0000FF00
+            i32.and
+            i32.const 8
+            i32.shr_u
+
+            ;; Use this 8 bit value as the index to the validate lookup table in memory
+            i32.load8_u
+
+            ;; If invalid then return not valid
+            if
+                i32.const 0
+                return
+            end
+
+            ;; Get third 8 bits
+            local.get $baseData
+            i32.const 0x00FF0000
+            i32.and
+            i32.const 16
+            i32.shr_u
+
+            ;; Use this 8 bit value as the index to the validate lookup table in memory
+            i32.load8_u
+
+            ;; If invalid then return not valid
+            if
+                i32.const 0
+                return
+            end
+
+            ;; Get forth 8 bits
+            local.get $baseData
+            i32.const 0xFF000000
+            i32.and
+            i32.const 24
+            i32.shr_u
+
+            ;; Use this 8 bit value as the index to the validate lookup table in memory
+            i32.load8_u
+
+            ;; If invalid then return not valid
+            if
+                i32.const 0
+                return
+            end
+
+            ;; Increase the base memory offset by 4 bytes
+            local.get $baseMemory
+            i32.const 4
+            i32.add
+            local.set $baseMemory
+
+            ;; Loop again
+            br $encode_loop
+        end
+        end
+
+        ;; Get the last 4 byte block
+        local.get $baseMemory
+        i32.load
+        local.set $baseData
+
+        ;; Get first 8 bits
+        local.get $baseData
+        i32.const 0x000000FF
+        i32.and
+
+        ;; Use this 8 bit value as the index to the validate lookup table in memory
+        i32.load8_u
+
+        ;; If invalid then return not valid
+        if
+            i32.const 0
+            return
+        end
+
+        ;; Get second 8 bits
+        local.get $baseData
+        i32.const 0x0000FF00
+        i32.and
+        i32.const 8
+        i32.shr_u
+
+        ;; Use this 8 bit value as the index to the validate lookup table in memory
+        i32.load8_u
+
+        ;; If invalid then return not valid
+        if
+            i32.const 0
+            return
+        end
+
+        ;; Get third 8 bits
+        local.get $baseData
+        i32.const 0x00FF0000
+        i32.and
+        i32.const 16
+        i32.shr_u
+
+        ;; Set character
+        local.set $character
+
+        ;; If = character
+        local.get $character
+        i32.const 0x3D
+        i32.eq
+        if
+            ;; Get forth 8 bits
+            local.get $baseData
+            i32.const 0xFF000000
+            i32.and
+            i32.const 24
+            i32.shr_u
+
+            ;; If not = character
+            i32.const 0x3D
+            i32.ne
+            if
+                ;; We have a = followed by something other than a = therefore this is not valid
+                i32.const 0
+                return
+            end
+
+            ;; This is a = followed by another = character and therefore valid
+            i32.const 1
+            return
+        end
+
+        ;; Use this character value as the index to the validate lookup table in memory
+        local.get $character
+        i32.load8_u
+
+        ;; If invalid then return not valid
+        if
+            i32.const 0
+            return
+        end
+
+        ;; Get forth 8 bits
+        local.get $baseData
+        i32.const 0xFF000000
+        i32.and
+        i32.const 24
+        i32.shr_u
+
+        ;; Set character
+        local.set $character
+
+        ;; If = character
+        local.get $character
+        i32.const 0x3D
+        i32.ne
+        if
+            ;; Use this character value as the index to the validate lookup table in memory
+            local.get $character
+            i32.load8_u
+
+            ;; If invalid then return not valid
+            if
+                i32.const 0
+                return
+            end
+        end
+
+        ;; Must be valid so set result
+        i32.const 1
+    )
 )

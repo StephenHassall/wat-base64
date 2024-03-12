@@ -81,10 +81,9 @@ export default class Base64  {
     /**
      * Decode the given base64 string into an array buffer.
      * @param {String} base64 The base64 encoded string.
-     * @param {Boolean} [trusted] Is the encoded data from a trusted source (quicker) or are extra checks required (slower).
      * @return {ArrayBuffer} The array of data that was encoded in the string.
      */
-    decode(base64, trusted) {
+    decode(base64) {
         // Set the base length (in bytes)
         const base64Length = base64.length;
 
@@ -92,7 +91,11 @@ export default class Base64  {
         if (base64Length % 4) throw new Error('Base64 length must only be divisible by 4');
 
         // Set array length (that will be created, in bytes)
-        const arrayLength = Math.ceil(base64Length / 4) * 3;
+        let arrayLength = Math.ceil(base64Length / 4) * 3;
+
+        // If padding used
+        if (base64.endsWith('==') === true) arrayLength -= 2;
+        else if (base64.endsWith('=') === true) arrayLength -= 1;
 
         // Set total memory needed (include decode lookup array at the start)
         const totalMemorySize = 256 + base64Length + arrayLength;
@@ -131,5 +134,57 @@ export default class Base64  {
 
         // Return the array buffer result
         return arrayBuffer;
+    }
+
+    /**
+     * Validate the given base64 string.
+     * @param {String} base64 The base64 encoded string.
+     * @return {Boolean} 
+     */
+    validate(base64) {
+        // Check parameter
+        if (!base64) return false;
+        if (typeof base64 !== 'string') return false;
+        if (base64.length === 0) return false;
+
+        // Set the base length (in bytes)
+        const base64Length = base64.length;
+
+        // Set total memory needed (include validate lookup array at the start)
+        const totalMemorySize = 256 + base64Length;
+
+        // Set bytes per page amount
+        const bytesPerPage = 64 * 1024;
+
+        // Set the page size required
+        const pageSizeRequired = Math.ceil(totalMemorySize / bytesPerPage);
+
+        // If we need to increase the memory page size
+        if (pageSizeRequired > this._memoryPageSize) {
+            // Grow the memory
+            this._memory.grow(pageSizeRequired);
+
+            // Reset the memory page size
+            this._memoryPageSize = pageSizeRequired;
+        }
+
+        // Create text encoder and create the Uint8Array (UTC-8) of the base64 text
+        let encoder = new TextEncoder();
+        let base64Memory = encoder.encode(base64);
+
+        // Set memory offsets
+        const base64Offset = 256;
+        
+        // Copy the base64 text into the WASM memory
+        this._memoryUint8Array.set(base64Memory, base64Offset);
+
+        // Validate the base64 text
+        const result = this._wasm.instance.exports.validate(base64Offset, base64Length);
+
+        // If not valid
+        if (result === 0) return false;
+
+        // Return valid
+        return true;
     }
 }

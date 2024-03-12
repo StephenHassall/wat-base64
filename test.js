@@ -10,6 +10,7 @@ export default class Test {
         // Run test functions
         //Test.testEncode(base64);
         Test.testDecode(base64);
+        //Test.testValidate(base64);
 
         // Log all done
         console.log('Done');
@@ -186,5 +187,189 @@ export default class Test {
         if (arrayBuffer[2] !== 0xA5) error = true;
         if (error === true) { console.log('ERROR: testDecode 1'); return; }
 
+        // Test 2 (2 bytes for padding from readme example)
+        arrayBuffer = base64.decode('yeD=');
+        if (arrayBuffer.length !== 2) error = true;
+        if (arrayBuffer[0] !== 0xB2) error = true;
+        if (arrayBuffer[1] !== 0x37) error = true;
+        if (error === true) { console.log('ERROR: testDecode 2'); return; }
+
+        // Test 3 (1 byte for padding from readme example)
+        arrayBuffer = base64.decode('yC==');
+        if (arrayBuffer.length !== 1) error = true;
+        if (arrayBuffer[0] !== 0xB2) error = true;
+        if (error === true) { console.log('ERROR: testDecode 3'); return; }
+
+        // Test 4 (2 loops)
+        arrayBuffer = base64.decode('yeTpyeTp');
+        if (arrayBuffer.length !== 6) error = true;
+        if (arrayBuffer[0] !== 0xB2) error = true;
+        if (arrayBuffer[1] !== 0x37) error = true;
+        if (arrayBuffer[2] !== 0xA5) error = true;
+        if (arrayBuffer[3] !== 0xB2) error = true;
+        if (arrayBuffer[4] !== 0x37) error = true;
+        if (arrayBuffer[5] !== 0xA5) error = true;
+        if (error === true) { console.log('ERROR: testDecode 4'); return; }
+
+        // Test 5 (1 loop and 2 bytes for padding)
+        arrayBuffer = base64.decode('yeTpyeD=');
+        if (arrayBuffer.length !== 5) error = true;
+        if (arrayBuffer[0] !== 0xB2) error = true;
+        if (arrayBuffer[1] !== 0x37) error = true;
+        if (arrayBuffer[2] !== 0xA5) error = true;
+        if (arrayBuffer[3] !== 0xB2) error = true;
+        if (arrayBuffer[4] !== 0x37) error = true;
+        if (error === true) { console.log('ERROR: testDecode 5'); return; }
+
+        // Test 6 (1 loop and 1 byte for padding)
+        arrayBuffer = base64.decode('yeTpyC==');
+        if (arrayBuffer.length !== 4) error = true;
+        if (arrayBuffer[0] !== 0xB2) error = true;
+        if (arrayBuffer[1] !== 0x37) error = true;
+        if (arrayBuffer[2] !== 0xA5) error = true;
+        if (arrayBuffer[3] !== 0xB2) error = true;
+        if (error === true) { console.log('ERROR: testDecode 6'); return; }
+
+        // Test 7 (3 loops)
+        arrayBuffer = base64.decode('yeTpyeTpyeTp');
+        if (arrayBuffer.length !== 9) error = true;
+        if (arrayBuffer[0] !== 0xB2) error = true;
+        if (arrayBuffer[1] !== 0x37) error = true;
+        if (arrayBuffer[2] !== 0xA5) error = true;
+        if (arrayBuffer[3] !== 0xB2) error = true;
+        if (arrayBuffer[4] !== 0x37) error = true;
+        if (arrayBuffer[5] !== 0xA5) error = true;
+        if (arrayBuffer[6] !== 0xB2) error = true;
+        if (arrayBuffer[7] !== 0x37) error = true;
+        if (arrayBuffer[8] !== 0xA5) error = true;
+        if (error === true) { console.log('ERROR: testDecode 7'); return; }
+
+        // Test 8 (2 loop and 2 bytes for padding)
+        arrayBuffer = base64.decode('yeTpyeTpyeD=');
+        if (arrayBuffer.length !== 8) error = true;
+        if (arrayBuffer[0] !== 0xB2) error = true;
+        if (arrayBuffer[1] !== 0x37) error = true;
+        if (arrayBuffer[2] !== 0xA5) error = true;
+        if (arrayBuffer[3] !== 0xB2) error = true;
+        if (arrayBuffer[4] !== 0x37) error = true;
+        if (arrayBuffer[5] !== 0xA5) error = true;
+        if (arrayBuffer[6] !== 0xB2) error = true;
+        if (arrayBuffer[7] !== 0x37) error = true;
+        if (error === true) { console.log('ERROR: testDecode 8'); return; }
+
+        // Test 9 (2 loop and 1 byte for padding)
+        arrayBuffer = base64.decode('yeTpyeTpyC==');
+        if (arrayBuffer.length !== 7) error = true;
+        if (arrayBuffer[0] !== 0xB2) error = true;
+        if (arrayBuffer[1] !== 0x37) error = true;
+        if (arrayBuffer[2] !== 0xA5) error = true;
+        if (arrayBuffer[3] !== 0xB2) error = true;
+        if (arrayBuffer[4] !== 0x37) error = true;
+        if (arrayBuffer[5] !== 0xA5) error = true;
+        if (arrayBuffer[6] !== 0xB2) error = true;
+        if (error === true) { console.log('ERROR: testDecode 9'); return; }
+
+        // Test 10 (get all base64 character)
+        arrayBuffer = base64.decode('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/');
+        if (arrayBuffer.length !== 48) error = true;
+        if (arrayBuffer[0] !== 0x40) error = true;
+        if (arrayBuffer[1] !== 0x20) error = true;
+        if (arrayBuffer[2] !== 0x0C) error = true;
+        if (arrayBuffer[3] !== 0x44) error = true;
+        if (arrayBuffer[4] !== 0x61) error = true;
+        if (arrayBuffer[5] !== 0x1C) error = true;
+        if (arrayBuffer[6] !== 0x48) error = true;
+        if (arrayBuffer[7] !== 0xA2) error = true;
+        if (arrayBuffer[8] !== 0x2C) error = true;
+        if (arrayBuffer[9] !== 0x4C) error = true;
+        if (arrayBuffer[10] !== 0xE3) error = true;
+        if (arrayBuffer[11] !== 0x3C) error = true;
+        if (arrayBuffer[12] !== 0x50) error = true;
+        if (arrayBuffer[13] !== 0x24) error = true;
+        if (arrayBuffer[14] !== 0x4D) error = true;
+        if (arrayBuffer[15] !== 0x54) error = true;
+        if (arrayBuffer[16] !== 0x65) error = true;
+        if (arrayBuffer[17] !== 0x5D) error = true;
+        if (arrayBuffer[18] !== 0x58) error = true;
+        if (arrayBuffer[19] !== 0xA6) error = true;
+        if (arrayBuffer[20] !== 0x6D) error = true;
+        if (arrayBuffer[21] !== 0x5C) error = true;
+        if (arrayBuffer[22] !== 0xE7) error = true;
+        if (arrayBuffer[23] !== 0x7D) error = true;
+        if (arrayBuffer[24] !== 0x60) error = true;
+        if (arrayBuffer[25] !== 0x28) error = true;
+        if (arrayBuffer[26] !== 0x8E) error = true;
+        if (arrayBuffer[27] !== 0x64) error = true;
+        if (arrayBuffer[28] !== 0x69) error = true;
+        if (arrayBuffer[29] !== 0x9E) error = true;
+        if (arrayBuffer[30] !== 0x68) error = true;
+        if (arrayBuffer[31] !== 0xAA) error = true;
+        if (arrayBuffer[32] !== 0xAE) error = true;
+        if (arrayBuffer[33] !== 0x6C) error = true;
+        if (arrayBuffer[34] !== 0xEB) error = true;
+        if (arrayBuffer[35] !== 0xBE) error = true;
+        if (arrayBuffer[36] !== 0x70) error = true;
+        if (arrayBuffer[37] !== 0x2C) error = true;
+        if (arrayBuffer[38] !== 0xCF) error = true;
+        if (arrayBuffer[39] !== 0x74) error = true;
+        if (arrayBuffer[40] !== 0x6D) error = true;
+        if (arrayBuffer[41] !== 0xDF) error = true;
+        if (arrayBuffer[42] !== 0x78) error = true;
+        if (arrayBuffer[43] !== 0xAE) error = true;
+        if (arrayBuffer[44] !== 0xEF) error = true;
+        if (arrayBuffer[45] !== 0x7C) error = true;
+        if (arrayBuffer[46] !== 0xEF) error = true;
+        if (arrayBuffer[47] !== 0xFF) error = true;
+        if (error === true) { console.log('ERROR: testDecode 10'); return; }
     }
+
+    /**
+     * Test the validate function.
+     */
+    static testValidate(base64) {
+        // Test 1, invalid parameter
+        if (base64.validate() === true) { console.log('ERROR: testValidate 1,1'); return; }
+        if (base64.validate(null) === true) { console.log('ERROR: testValidate 1,2'); return; }
+        if (base64.validate(123) === true) { console.log('ERROR: testValidate 1,3'); return; }
+        if (base64.validate(true) === true) { console.log('ERROR: testValidate 1,4'); return; }
+        if (base64.validate(new Date()) === true) { console.log('ERROR: testValidate 1,5'); return; }
+
+        // Test 2, wrong length
+        if (base64.validate('') === true) { console.log('ERROR: testValidate 2,1'); return; }
+        if (base64.validate('a') === true) { console.log('ERROR: testValidate 2,2'); return; }
+        if (base64.validate('abc') === true) { console.log('ERROR: testValidate 2,3'); return; }
+        if (base64.validate('abcde') === true) { console.log('ERROR: testValidate 2,4'); return; }
+        if (base64.validate('abcdef') === true) { console.log('ERROR: testValidate 2,5'); return; }
+        if (base64.validate('abcdefg') === true) { console.log('ERROR: testValidate 2,6'); return; }
+
+        // Test 3, valid length
+        if (base64.validate('abcd') === false) { console.log('ERROR: testValidate 3,1'); return; }
+        if (base64.validate('abcdefgh') === false) { console.log('ERROR: testValidate 3,2'); return; }
+        if (base64.validate('abcdefghijkl') === false) { console.log('ERROR: testValidate 3,3'); return; }
+
+        // Test 4, valid padding
+        if (base64.validate('abc=') === false) { console.log('ERROR: testValidate 4,1'); return; }
+        if (base64.validate('ab==') === false) { console.log('ERROR: testValidate 4,2'); return; }
+        if (base64.validate('abcdefg=') === false) { console.log('ERROR: testValidate 4,3'); return; }
+        if (base64.validate('abcdef==') === false) { console.log('ERROR: testValidate 4,4'); return; }
+
+        // Test 5, invalid padding
+        if (base64.validate('a===') === true) { console.log('ERROR: testValidate 5,1'); return; }
+        if (base64.validate('abcde===') === true) { console.log('ERROR: testValidate 5,2'); return; }
+        if (base64.validate('a=bc') === true) { console.log('ERROR: testValidate 5,3'); return; }
+        if (base64.validate('ab=d') === true) { console.log('ERROR: testValidate 5,4'); return; }
+        if (base64.validate('abcde=gh') === true) { console.log('ERROR: testValidate 5,5'); return; }
+        if (base64.validate('abcdef=h') === true) { console.log('ERROR: testValidate 5,6'); return; }
+
+        // Test 6, invalid characters
+        if (base64.validate('$%^&') === true) { console.log('ERROR: testValidate 6,1'); return; }
+
+        // Test 7, valid characters
+        if (base64.validate('abcdefghijklmnopqrstuvwxyz12') === false) { console.log('ERROR: testValidate 7,1'); return; }
+        if (base64.validate('ABCDEFGHIJKLMNOPQRSTUVWXYZ12') === false) { console.log('ERROR: testValidate 7,2'); return; }
+        if (base64.validate('0123456789+/') === false) { console.log('ERROR: testValidate 7,3'); return; }
+        if (base64.validate('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+/') === false) { console.log('ERROR: testValidate 7,4'); return; }
+
+    }
+
 }
