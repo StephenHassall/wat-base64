@@ -13,9 +13,6 @@ export default class Base64  {
         // Create memory to the starting page size
         this._memory = new WebAssembly.Memory({ initial: this._memoryPageSize });
 
-        // Create Uint8Array of the memory buffer
-        this._memoryUint8Array = new Uint8Array(this._memory.buffer);
-
         // Set options
         const options = {
             import: {
@@ -61,8 +58,11 @@ export default class Base64  {
         const arrayOffset = 64;
         const base64Offset = 64 + arrayLength;
         
+        // Create Uint8Array of the memory buffer
+        const memoryUint8Array = new Uint8Array(this._memory.buffer);
+
         // Copy the array buffer into the WASM memory
-        this._memoryUint8Array.set(arrayBuffer, arrayOffset);
+        memoryUint8Array.set(arrayBuffer, arrayOffset);
 
         // Encode the array into base64
         this._wasm.instance.exports.encode(arrayOffset, arrayLength, base64Offset, base64Length);
@@ -81,14 +81,20 @@ export default class Base64  {
     /**
      * Decode the given base64 string into an array buffer.
      * @param {String} base64 The base64 encoded string.
-     * @return {ArrayBuffer} The array of data that was encoded in the string.
+     * @param {Boolean} [trusted=false] Is the base64 coming from a trusted source, or does it need validating first.
+     * @return {ArrayBuffer} The array of data that was encoded in the string or null if invalid data.
      */
-    decode(base64) {
+    decode(base64, trusted) {
+        // Check parameter
+        if (!base64) return null;
+        if (typeof base64 !== 'string') return null;
+        if (base64.length === 0) return null;
+
         // Set the base length (in bytes)
         const base64Length = base64.length;
 
-        // If not divisible by 4 (i.e. there are remainders)
-        if (base64Length % 4) throw new Error('Base64 length must only be divisible by 4');
+        // If not divisible by 4 (i.e. there are remainders, therefore invalid)
+        if (base64Length % 4) return null;
 
         // Set array length (that will be created, in bytes)
         let arrayLength = Math.ceil(base64Length / 4) * 3;
@@ -123,8 +129,17 @@ export default class Base64  {
         let encoder = new TextEncoder();
         let base64Memory = encoder.encode(base64);
         
+        // Create Uint8Array of the memory buffer
+        const memoryUint8Array = new Uint8Array(this._memory.buffer);
+        
         // Copy the base64 text into the WASM memory
-        this._memoryUint8Array.set(base64Memory, base64Offset);
+        memoryUint8Array.set(base64Memory, base64Offset);
+
+        // If not trusted
+        if (trusted !== true) {
+            // Validate the base64 data
+            if (this._wasm.instance.exports.validate(base64Offset, base64Length) === 0) return null;
+        }
 
         // Decode the base64 text into array
         this._wasm.instance.exports.decode(base64Offset, base64Length, arrayOffset, arrayLength);
@@ -175,8 +190,11 @@ export default class Base64  {
         // Set memory offsets
         const base64Offset = 256;
         
+        // Create Uint8Array of the memory buffer
+        const memoryUint8Array = new Uint8Array(this._memory.buffer);
+
         // Copy the base64 text into the WASM memory
-        this._memoryUint8Array.set(base64Memory, base64Offset);
+        memoryUint8Array.set(base64Memory, base64Offset);
 
         // Validate the base64 text
         const result = this._wasm.instance.exports.validate(base64Offset, base64Length);

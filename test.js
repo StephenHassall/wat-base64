@@ -8,9 +8,12 @@ export default class Test {
      */
     static run(base64) {
         // Run test functions
-        //Test.testEncode(base64);
-        Test.testDecode(base64);
-        //Test.testValidate(base64);
+        Test.testEncode(base64);
+        Test.testDecode(base64, true);
+        Test.testDecode(base64, false);
+        Test.testInvalidDecode(base64);
+        Test.testValidate(base64);
+        Test.testRandomData(base64);
 
         // Log all done
         console.log('Done');
@@ -162,25 +165,17 @@ export default class Test {
         arrayBuffer[47] = 0xFF;
         result = base64.encode(arrayBuffer);
         if (result !== 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/') { console.log('ERROR: testEncode 10 ' + result); return; }
-
-/*
-
-        // Fill with values 0x00 to 0xFF
-        for (let index = 0; index < 256; index++) arrayBuffer[index] = index;
-
-        const base64Result = base64.encode(arrayBuffer);
-*/
     }
 
     /**
-     * Test the decode function.
+     * Test the decode function (trusted).
      */
-    static testDecode(base64) {
+    static testDecode(base64, trusted) {
         // Set error
         let error = false;
 
         // Test 1 (3 bytes from readme example)
-        let arrayBuffer = base64.decode('yeTp');
+        let arrayBuffer = base64.decode('yeTp', trusted);
         if (arrayBuffer.length !== 3) error = true;
         if (arrayBuffer[0] !== 0xB2) error = true;
         if (arrayBuffer[1] !== 0x37) error = true;
@@ -188,20 +183,20 @@ export default class Test {
         if (error === true) { console.log('ERROR: testDecode 1'); return; }
 
         // Test 2 (2 bytes for padding from readme example)
-        arrayBuffer = base64.decode('yeD=');
+        arrayBuffer = base64.decode('yeD=', trusted);
         if (arrayBuffer.length !== 2) error = true;
         if (arrayBuffer[0] !== 0xB2) error = true;
         if (arrayBuffer[1] !== 0x37) error = true;
         if (error === true) { console.log('ERROR: testDecode 2'); return; }
 
         // Test 3 (1 byte for padding from readme example)
-        arrayBuffer = base64.decode('yC==');
+        arrayBuffer = base64.decode('yC==', trusted);
         if (arrayBuffer.length !== 1) error = true;
         if (arrayBuffer[0] !== 0xB2) error = true;
         if (error === true) { console.log('ERROR: testDecode 3'); return; }
 
         // Test 4 (2 loops)
-        arrayBuffer = base64.decode('yeTpyeTp');
+        arrayBuffer = base64.decode('yeTpyeTp', trusted);
         if (arrayBuffer.length !== 6) error = true;
         if (arrayBuffer[0] !== 0xB2) error = true;
         if (arrayBuffer[1] !== 0x37) error = true;
@@ -212,7 +207,7 @@ export default class Test {
         if (error === true) { console.log('ERROR: testDecode 4'); return; }
 
         // Test 5 (1 loop and 2 bytes for padding)
-        arrayBuffer = base64.decode('yeTpyeD=');
+        arrayBuffer = base64.decode('yeTpyeD=', trusted);
         if (arrayBuffer.length !== 5) error = true;
         if (arrayBuffer[0] !== 0xB2) error = true;
         if (arrayBuffer[1] !== 0x37) error = true;
@@ -222,7 +217,7 @@ export default class Test {
         if (error === true) { console.log('ERROR: testDecode 5'); return; }
 
         // Test 6 (1 loop and 1 byte for padding)
-        arrayBuffer = base64.decode('yeTpyC==');
+        arrayBuffer = base64.decode('yeTpyC==', trusted);
         if (arrayBuffer.length !== 4) error = true;
         if (arrayBuffer[0] !== 0xB2) error = true;
         if (arrayBuffer[1] !== 0x37) error = true;
@@ -231,7 +226,7 @@ export default class Test {
         if (error === true) { console.log('ERROR: testDecode 6'); return; }
 
         // Test 7 (3 loops)
-        arrayBuffer = base64.decode('yeTpyeTpyeTp');
+        arrayBuffer = base64.decode('yeTpyeTpyeTp', trusted);
         if (arrayBuffer.length !== 9) error = true;
         if (arrayBuffer[0] !== 0xB2) error = true;
         if (arrayBuffer[1] !== 0x37) error = true;
@@ -245,7 +240,7 @@ export default class Test {
         if (error === true) { console.log('ERROR: testDecode 7'); return; }
 
         // Test 8 (2 loop and 2 bytes for padding)
-        arrayBuffer = base64.decode('yeTpyeTpyeD=');
+        arrayBuffer = base64.decode('yeTpyeTpyeD=', trusted);
         if (arrayBuffer.length !== 8) error = true;
         if (arrayBuffer[0] !== 0xB2) error = true;
         if (arrayBuffer[1] !== 0x37) error = true;
@@ -258,7 +253,7 @@ export default class Test {
         if (error === true) { console.log('ERROR: testDecode 8'); return; }
 
         // Test 9 (2 loop and 1 byte for padding)
-        arrayBuffer = base64.decode('yeTpyeTpyC==');
+        arrayBuffer = base64.decode('yeTpyeTpyC==', trusted);
         if (arrayBuffer.length !== 7) error = true;
         if (arrayBuffer[0] !== 0xB2) error = true;
         if (arrayBuffer[1] !== 0x37) error = true;
@@ -270,7 +265,7 @@ export default class Test {
         if (error === true) { console.log('ERROR: testDecode 9'); return; }
 
         // Test 10 (get all base64 character)
-        arrayBuffer = base64.decode('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/');
+        arrayBuffer = base64.decode('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/', trusted);
         if (arrayBuffer.length !== 48) error = true;
         if (arrayBuffer[0] !== 0x40) error = true;
         if (arrayBuffer[1] !== 0x20) error = true;
@@ -324,6 +319,37 @@ export default class Test {
     }
 
     /**
+     * Test invalid decode function.
+     */
+    static testInvalidDecode(base64) {
+        // Test 1, invalid parameter
+        if (base64.decode() !== null) { console.log('ERROR: testInValidDecode 1,1'); return; }
+        if (base64.decode(null) !== null) { console.log('ERROR: testInValidDecode 1,2'); return; }
+        if (base64.decode(123) !== null) { console.log('ERROR: testInValidDecode 1,3'); return; }
+        if (base64.decode(true) !== null) { console.log('ERROR: testInValidDecode 1,4'); return; }
+        if (base64.decode(new Date()) !== null) { console.log('ERROR: testInValidDecode 1,5'); return; }
+
+        // Test 2, wrong length
+        if (base64.decode('') !== null) { console.log('ERROR: testInValidDecode 2,1'); return; }
+        if (base64.decode('a') !== null) { console.log('ERROR: testInValidDecode 2,2'); return; }
+        if (base64.decode('abc') !== null) { console.log('ERROR: testInValidDecode 2,3'); return; }
+        if (base64.decode('abcde') !== null) { console.log('ERROR: testInValidDecode 2,4'); return; }
+        if (base64.decode('abcdef') !== null) { console.log('ERROR: testInValidDecode 2,5'); return; }
+        if (base64.decode('abcdefg') !== null) { console.log('ERROR: testInValidDecode 2,6'); return; }
+
+        // Test 3, invalid padding
+        if (base64.decode('a===') !== null) { console.log('ERROR: testInValidDecode 3,1'); return; }
+        if (base64.decode('abcde===') !== null) { console.log('ERROR: testInValidDecode 3,2'); return; }
+        if (base64.decode('a=bc') !== null) { console.log('ERROR: testInValidDecode 3,3'); return; }
+        if (base64.decode('ab=d') !== null) { console.log('ERROR: testInValidDecode 3,4'); return; }
+        if (base64.decode('abcde=gh') !== null) { console.log('ERROR: testInValidDecode 3,5'); return; }
+        if (base64.decode('abcdef=h') !== null) { console.log('ERROR: testInValidDecode 3,6'); return; }
+
+        // Test 4, invalid characters
+        if (base64.decode('$%^&') !== null) { console.log('ERROR: testValidate 4,1'); return; }
+    }
+
+    /**
      * Test the validate function.
      */
     static testValidate(base64) {
@@ -370,6 +396,77 @@ export default class Test {
         if (base64.validate('0123456789+/') === false) { console.log('ERROR: testValidate 7,3'); return; }
         if (base64.validate('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+/') === false) { console.log('ERROR: testValidate 7,4'); return; }
 
+    }
+
+    /**
+     * Test encoding and decoding with random data.
+     */
+    static testRandomData(base64) {
+        // Test 1 (100 byte, within 1 page of memory)
+        let arrayBuffer = Test.createRandomData(100);
+        let encodedString = base64.encode(arrayBuffer);
+        if (base64.validate(encodedString) === false) { console.log('ERROR: testRandom 1,1'); return; }
+        let decodedArray = base64.decode(encodedString);
+        if (Test.compareArray(arrayBuffer, decodedArray) === false) { console.log('ERROR: testRandom 1,2'); return; }
+
+        // Test 2 (1600 byte, within extra page of memory)
+        arrayBuffer = Test.createRandomData(1600);
+        encodedString = base64.encode(arrayBuffer);
+        if (base64.validate(encodedString) === false) { console.log('ERROR: testRandom 2,1'); return; }
+        decodedArray = base64.decode(encodedString);
+        if (Test.compareArray(arrayBuffer, decodedArray) === false) { console.log('ERROR: testRandom 2,2'); return; }
+
+        // Test 3 (1.2mb very large)
+        arrayBuffer = Test.createRandomData(1200000);
+        encodedString = base64.encode(arrayBuffer);
+        if (base64.validate(encodedString) === false) { console.log('ERROR: testRandom 3,1'); return; }
+        decodedArray = base64.decode(encodedString);
+        if (Test.compareArray(arrayBuffer, decodedArray) === false) { console.log('ERROR: testRandom 3,2'); return; }
+    }
+
+    /**
+     * Create a random array of data to the given size.
+     * @param {Number} size The number of bytes the array should contain.
+     */
+    static createRandomData(size) {
+        // Create array buffer
+        const arrayBuffer = new Uint8Array(size);
+
+        // For each byte
+        for (let index = 0; index < size; index++) {
+            // Create random byte
+            const byte = Math.floor(Math.random() * 256);
+
+            // Set the array item to the random byte value
+            arrayBuffer[index] = byte;
+        }
+
+        // Return the array buffer
+        return arrayBuffer;
+    }
+
+    /**
+     * Compare two arrays and see if they are the same.
+     * @param {Int8Array} array1 First array.
+     * @param {Int8Array} array2 Second array.
+     * @return {Boolean} True if the arrays are the same, otherwise false if they are different.
+     */
+    static compareArray(array1, array2) {
+        // Compare sizes
+        if (array1.length !== array2.length) return false;
+
+        // For each byte
+        for (let index = 0; index < array1.length; index++) {
+            // Compare
+            if (array1[index] !== array2[index]) {
+                // Log problem
+                console.log('ERROR', index, array1[index], array2[index]);
+                return false;
+            }
+        }
+
+        // Return both the same
+        return true;
     }
 
 }

@@ -1,10 +1,9 @@
 (;
-    Base64 encoding and decoding.
+    Base64 encoding, decoding and validate functions.
 ;)
 (module
     ;; Import memory for string data and quick lookups
     (import "import" "memory" (memory 1))
-
 
     ;; Encode lookup array
     (data $encodeLookupArray
@@ -59,7 +58,11 @@
     )
 
     (;
-
+        Encode an array of bytes into a string of base64 encoded characters.
+        @param {i32} $arrayOffset Where in memory the array of bytes are located.
+        @param {i32} $arrayLength The number of bytes in the array to be encoded.
+        @param {i32} $baseOffset Where in memory the ASCII string is located that will receive the base64 encoding.
+        @param {i32} $baseLength The number of characters the base64 will contain. There is no NULL end.
     ;)
     (func (export "encode")
         ;; Parameters
@@ -83,7 +86,7 @@
         ;; Padding count
         (local $paddingCount i32)
 
-        ;; Put the decode lookup table array into memory (at zero offset)
+        ;; Copy the encode lookup table array into memory (at zero offset)
         i32.const 0
         i32.const 0
         i32.const 64
@@ -131,7 +134,7 @@
             i32.const 0x0000003F
             i32.and
 
-            ;; Use this 6 bit value as the index to the encode table in memory
+            ;; Use this 6 bit value as the index to the encode lookup table in memory
             i32.load8_u
 
             ;; Keep this first character (1) on the stack
@@ -143,7 +146,7 @@
             i32.const 6
             i32.shr_u
 
-            ;; Use this 6 bit value as the index to the encode table in memory
+            ;; Use this 6 bit value as the index to the encode lookup table in memory
             i32.load8_u
 
             ;; Set second base 64 character to byte 32
@@ -159,7 +162,7 @@
             i32.const 12
             i32.shr_u
 
-            ;; Use this 6 bit value as the index to the encode table in memory
+            ;; Use this 6 bit value as the index to the encode lookup table in memory
             i32.load8_u
 
             ;; Set third base 64 character to byte 32
@@ -175,7 +178,7 @@
             i32.const 18
             i32.shr_u
 
-            ;; Use this 6 bit value as the index to the encode table in memory
+            ;; Use this 6 bit value as the index to the encode table lookup in memory
             i32.load8_u
 
             ;; Set forth base 64 character to byte 32
@@ -183,7 +186,7 @@
             i32.shl
 
             ;; We now have the 4 base64 characters on the stack. Put them together
-            ;; into the into a single 32 bit integer
+            ;; into a single 32 bit integer
             i32.or
             i32.or
             i32.or
@@ -197,7 +200,7 @@
             i32.add
             local.set $baseMemory
 
-            ;; Increase the array memory by 3 bytes
+            ;; Increase the array memory offset by 3 bytes
             local.get $arrayMemory
             i32.const 3
             i32.add
@@ -225,7 +228,7 @@
         end
 
         ;; Get get 4 bytes
-        local.get $arrayOffset
+        local.get $arrayMemory
         i32.load
         local.set $arrayData
 
@@ -237,7 +240,7 @@
         i32.const 0x0000003F
         i32.and
 
-        ;; Use this 6 bit value as the index to the encode table in memory
+        ;; Use this 6 bit value as the index to the encode lookup table in memory
         i32.load8_u
 
         ;; Keep this first character (1) on the stack
@@ -254,7 +257,7 @@
             i32.const 6
             i32.shr_u
 
-            ;; Use this 6 bit value as the index to the encode table in memory
+            ;; Use this 6 bit value as the index to the encode lookup table in memory
             i32.load8_u
 
             ;; Set second base 64 character to byte 32
@@ -270,7 +273,7 @@
             i32.const 12
             i32.shr_u
 
-            ;; Use this 6 bit value as the index to the encode table in memory
+            ;; Use this 6 bit value as the index to the encode lookup table in memory
             i32.load8_u
 
             ;; Set third base 64 character to byte 32
@@ -291,7 +294,7 @@
             i32.const 6
             i32.shr_u
 
-            ;; Use this 6 bit value as the index to the encode table in memory
+            ;; Use this 6 bit value as the index to the encode lookup table in memory
             i32.load8_u
 
             ;; Set second base 64 character to byte 32
@@ -306,7 +309,7 @@
         end
         
         ;; We now have the 4 base64 characters on the stack. Put them together
-        ;; into the into a single 32 bit integer
+        ;; into a single 32 bit integer
         i32.or
         i32.or
         i32.or
@@ -316,7 +319,11 @@
     )
 
     (;
-
+        Decode a string of base64 characters into an array of bytes.
+        @param {i32} $baseOffset Where in memory the ASCII string is located that contains base64 encoding.
+        @param {i32} $baseLength The number of characters the base64 contains. There is no NULL end.
+        @param {i32} $arrayOffset Where in memory the array of bytes will be decoded into.
+        @param {i32} $arrayLength The number of bytes in the array will contain.
     ;)
     (func (export "decode")
         ;; Parameters
@@ -337,7 +344,7 @@
         ;; The base data memory value
         (local $baseData i32)
 
-        ;; Put the decode lookup table array into memory (at zero offset)
+        ;; Copy the decode lookup table array into memory (at zero offset)
         i32.const 0
         i32.const 0
         i32.const 256
@@ -383,7 +390,7 @@
             i32.const 0x000000FF
             i32.and
 
-            ;; Use this 8 bit value as the index to the decode table in memory
+            ;; Use this 8 bit value as the index to the decode lookup table in memory
             i32.load8_u
 
             ;; Keep this first 6 bits (1) on the stack
@@ -395,7 +402,7 @@
             i32.const 8
             i32.shr_u
 
-            ;; Use this 8 bit value as the index to the decode table in memory
+            ;; Use this 8 bit value as the index to the decode lookup table in memory
             i32.load8_u
 
             ;; Set second 6 bits of the 3 bytes
@@ -411,7 +418,7 @@
             i32.const 16
             i32.shr_u
 
-            ;; Use this 8 bit value as the index to the decode table in memory
+            ;; Use this 8 bit value as the index to the decode lookup table in memory
             i32.load8_u
 
             ;; Set third 6 bits of the 3 bytes
@@ -427,7 +434,7 @@
             i32.const 24
             i32.shr_u
 
-            ;; Use this 8 bit value as the index to the decode table in memory
+            ;; Use this 8 bit value as the index to the decode lookup table in memory
             i32.load8_u
 
             ;; Set third 6 bits of the 3 bytes
@@ -436,8 +443,8 @@
 
             ;; Keep this 6 bits (4) on the stack
 
-            ;; We now have the 4 6 bit parts on the stack. Put them together
-            ;; into the into a single 32 bit integer (only the first 24 bits)
+            ;; We now have the 4 6bit parts on the stack. Put them together
+            ;; into a single 32 bit integer (only the first 24 bits)
             i32.or
             i32.or
             i32.or
@@ -445,7 +452,7 @@
             ;; Store the 4 characters onto the base memory (in $arrayMemory)
             i32.store
 
-            ;; Increase the array memory by 3 bytes
+            ;; Increase the array memory offset by 3 bytes
             local.get $arrayMemory
             i32.const 3
             i32.add
@@ -461,9 +468,6 @@
             br $encode_loop
         end
         end
-
-
-
     )
 
     (;
