@@ -1,7 +1,11 @@
 /**
- * Base64 for use in a web browser.
+ * Base64 for use in NodeJS.
  */
-export default class Base64Web  {
+import { readFile } from "node:fs/promises";
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+export default class Base64Node  {
     /**
      * Fetch and load the WASM file.
      * @return {Promise} A promise.
@@ -20,8 +24,18 @@ export default class Base64Web  {
             }
         }
 
-        // Load in and create instance of base64.wasm file
-        this._wasm = await WebAssembly.instantiateStreaming(fetch('base64.wasm'), options);
+        // Get current folder
+        const __filename = fileURLToPath(import.meta.url);
+        const __dirname = path.dirname(__filename);
+        
+        // Read WASM data
+        const wasmBuffer = await readFile(__dirname + '/base64.wasm');
+
+        // Create WASM data from buffer
+        const wasmData = new Uint8Array(wasmBuffer);
+
+        // Instantiate the WASM data
+        this._wasm = await WebAssembly.instantiate(wasmData, options);
     }
 
     /**

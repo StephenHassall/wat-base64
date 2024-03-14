@@ -471,6 +471,9 @@
     )
 
     (;
+        Validate a string of base64 characters.
+        @param {i32} $baseOffset Where in memory the ASCII string is located that contains base64 encoding.
+        @param {i32} $baseLength The number of characters the base64 contains. There is no NULL end.
 
     ;)
     (func (export "validate")

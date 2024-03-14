@@ -1,17 +1,37 @@
-# WAT Base64
+# wat-base64
+Encode and decode Base64 data using WebAssembly WAT. Includes code in JavaScript for web browser and NodeJS.
 
-Encode and decode Base64 data using WebAssembly WAT.
+## Usage
 
-3 bytes are encoded into 4 base64 characters.
+This is an example of how to using the `base64-web.js` JavaScript class to encode an array of bytes into a base64 encoded string, and to then decode back again.
 
-Functions:
+```javascript
+import Base64Web from "./base64-web.js";
 
-encode
-decode
-decode_trusted
+// Create base64 web object
+const base64 = new Base64Web();
 
-JS >
-array = decode(string, trusted[optional])
+// Load the instance
+await base64.load();
+
+// Create array of data
+let arrayBuffer = new Uint8Array(3);
+arrayBuffer[0] = 0xB2;
+arrayBuffer[1] = 0x37;
+arrayBuffer[2] = 0xA5;
+
+// Encode into a base64 string
+let encoded = base64.encode(arrayBuffer);
+console.log(encoded); // Output: yeTp
+
+// Decode it back into an array
+let decoded = base64.decode(encoded);
+console.log(decoded); // Output: [0xB2, 0x37, 0xA5]
+```
+
+## Base64 Information
+
+Each 3x bytes of data are encoded into 4x base64 characters. The table below shows the 3x bytes from right to left. The 3x bytes are seen as one long 24bit number. This is then split into 4x 6bit values. Each 6bit value number is converted into an ASCII character (see table below).
 
 ```
 [0xB2, 0x37, 0xA5] => 'yeTp'
@@ -22,6 +42,8 @@ BIN:|1 0 1 0 0 1 0 1|0 0 1 1 0 1 1 1|1 0 1 1 0 0 1 0|
    :|   0x29    |    0x13   |    0x1E   |    0x32   |
 B64:|    p      |     T     |     e     |     y     |
 ```
+
+Each 6bit value has a range of values from `0` to `64`. Each value is converted into a character, ranging from `A` to `Z`, `a` to `z`, `0` to `9`, `+` and `/`. It also includes the special character `=` for padding. The table below shown the full list of 6bit value to base64 character.
 
 |Bin|B64|ASCII| |Bin|B64|ASCII| |Bin|B64|ASCII| |Bin|B64|ASCII|
 |---|:---:|:---:|---|---|:---:|:---:|---|---|:---:|:---:|---|---|:---:|:---:|
@@ -42,7 +64,9 @@ B64:|    p      |     T     |     e     |     y     |
 |001110|`O`|0x4F| |011110|`e`|0x65| |101110|`u`|0x75| |111110|`+`|0x2B|
 |001111|`P`|0x50| |011111|`f`|0x66| |101111|`v`|0x76| |111111|`/`|0x2F|
 
-The padding character is `=` 0x3D.
+The ending base64 string of characters will always be a multiple of 4 characters long. However the array being encoded does not always fit perfectly. Therefore we need to include padded.
+
+There will either be no padding needed, 1 padding character, or 2 padding characters. Below is an example of what this looks like.
 
 ```
 2 remaining bytes
@@ -65,6 +89,8 @@ BIN:|               |               |1 0 1 1 0 0 1 0|
    :|           |           |    0x02   |    0x32   |
 B64:|    =      |     =     |     C     |     y     |
 ```
+
+## Test Data
 
 Encode testing. This array will create a base64 string that contains all the possible characters.
 

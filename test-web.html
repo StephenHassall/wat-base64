@@ -9,12 +9,11 @@
   <p>Check the console for the test log.</p>
 </body>
 <script type="module">
-  import Base64 from "./base64-web.js";
+  import Base64Web from "./base64-web.js";
   import Test from "./test.js";
 
-
-  // Create base64 object
-  const base64 = new Base64();
+  // Create base64 web object
+  const base64 = new Base64Web();
 
   // Load the instance
   await base64.load();
